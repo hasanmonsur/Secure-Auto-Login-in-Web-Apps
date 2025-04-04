@@ -1,0 +1,60 @@
+﻿@page "/"
+@using BlazorAutoLogin.Providers
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.Components.Authorization
+@attribute [Authorize]
+
+<h1>Welcome, @userName!</h1>
+
+<button @onclick="Logout" class="btn btn-danger">Logout</button>
+
+@code {
+    // [CascadingParameter]
+    // private Task<AuthenticationState> AuthStateTask { get; set; }
+
+    [Inject]
+    private AuthenticationStateProvider AuthStateProvider { get; set; }
+
+    [Inject]
+    private NavigationManager NavManager { get; set; }
+
+    private string userName = string.Empty;
+
+
+    [Inject]
+    private HttpClient Http { get; set; }
+
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (AuthStateProvider is CustomAuthStateProvider customProvider)
+        {
+            var authState = await customProvider.GetAuthenticationStateAsync();
+            
+            var user = authState.User;
+
+            userName = user.Identity?.Name ?? "User";
+        }       
+    }
+
+    private async Task Logout()
+    {
+        try
+        {
+            
+            if (AuthStateProvider is CustomAuthStateProvider customProvider)
+            {
+                await customProvider.NotifyUserLogout();
+                await Http.PostAsync("api/auth/logout", null);
+                NavManager.NavigateTo("/login", forceLoad: true);
+            }
+
+        }
+        catch (Exception ex)
+        {
+            // Handle/log error
+        }
+    }
+}

@@ -1,0 +1,47 @@
+﻿@using BlazorAutoLogin.Providers
+@using Microsoft.AspNetCore.Components.Authorization
+
+
+<Router AppAssembly="@typeof(App).Assembly">
+    <Found Context="routeData">        
+        <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)" />
+        <FocusOnNavigate RouteData="@routeData" Selector="h1" />
+    </Found>
+    <NotFound>
+        <PageTitle>Not found</PageTitle>
+        <LayoutView Layout="@typeof(MainLayout)">
+            <p role="alert">Sorry, there's nothing at this address.</p>
+        </LayoutView>
+    </NotFound>
+</Router>
+
+@code {
+    // [CascadingParameter]
+    // private Task<AuthenticationState> authStateTask { get; set; }
+    [Inject]
+    private AuthenticationStateProvider AuthStateProvider { get; set; }
+
+    [Inject]
+    private NavigationManager NavManager { get; set; }
+
+
+    private string userName = string.Empty;
+    private bool identity = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+
+        if (AuthStateProvider is CustomAuthStateProvider customProvider)
+        {
+            var authState = await customProvider.GetAuthenticationStateAsync();
+            
+            var user = authState.User;
+            userName = user.Identity?.Name ?? "User";
+
+            identity = user.Identity?.IsAuthenticated ?? false;
+
+            //if (!identity)
+            // NavManager.NavigateTo("/", forceLoad: true);
+        }      
+    }
+}
